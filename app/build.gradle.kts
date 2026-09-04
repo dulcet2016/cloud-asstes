@@ -51,6 +51,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
     implementation("androidx.activity:activity-compose:1.9.3")
 
     implementation(platform("androidx.compose:compose-bom:2024.09.00"))
@@ -63,25 +64,23 @@ dependencies {
 
     implementation("androidx.navigation:navigation-compose:2.8.4")
 
-    // --- Room (offline SQLite database) ---
+    // --- Room ---
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
     kapt("androidx.room:room-compiler:2.6.1")
 
-    // --- DataStore (settings: current scanner/staff name, last mode, etc.) ---
+    // --- DataStore ---
     implementation("androidx.datastore:datastore-preferences:1.1.1")
 
-    // --- CameraX (camera preview + frame analysis) ---
+    // --- CameraX ---
     implementation("androidx.camera:camera-core:1.3.4")
     implementation("androidx.camera:camera-camera2:1.3.4")
     implementation("androidx.camera:camera-lifecycle:1.3.4")
     implementation("androidx.camera:camera-view:1.3.4")
 
-    // --- ML Kit Barcode Scanning: standalone/bundled model, works fully offline,
-    //     no Google Play Services or network download required. ---
+    // --- ML Kit ---
     implementation("com.google.mlkit:barcode-scanning:17.3.0")
 
-    // --- ZXing: used only for QR *generation* (label PDFs), pure-Java encoder,
-    //     no Android/network dependency at all. ---
+    // --- ZXing ---
     implementation("com.google.zxing:core:3.5.3")
 }
