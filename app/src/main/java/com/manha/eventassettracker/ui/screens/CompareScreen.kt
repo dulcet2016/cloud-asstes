@@ -15,8 +15,8 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExposedDropdownMenu
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -48,29 +48,55 @@ fun CompareScreen(viewModel: AppViewModel, onBack: () -> Unit) {
     var mode by remember { mutableStateOf(MODE_CHECKLIST) }
 
     ScreenScaffold(title = "Missing Items Check", onBack = onBack) { padding ->
-        Column(modifier = padding.fillMaxSize().padding(16.dp)) {
+        Column(
+            modifier = padding
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
             Row(modifier = Modifier.fillMaxWidth()) {
                 Button(
                     onClick = { mode = MODE_CHECKLIST },
                     modifier = Modifier.weight(1f),
-                    colors = if (mode == MODE_CHECKLIST) ButtonDefaults.buttonColors() else ButtonDefaults.outlinedButtonColors()
-                ) { Text("✔️ Checklist") }
+                    colors = if (mode == MODE_CHECKLIST) {
+                        ButtonDefaults.buttonColors()
+                    } else {
+                        ButtonDefaults.outlinedButtonColors()
+                    }
+                ) {
+                    Text("✔️ Checklist")
+                }
+
                 Spacer(Modifier.width(8.dp))
+
                 Button(
                     onClick = { mode = MODE_PASTE },
                     modifier = Modifier.weight(1f),
-                    colors = if (mode == MODE_PASTE) ButtonDefaults.buttonColors() else ButtonDefaults.outlinedButtonColors()
-                ) { Text("📋 Paste & Compare") }
+                    colors = if (mode == MODE_PASTE) {
+                        ButtonDefaults.buttonColors()
+                    } else {
+                        ButtonDefaults.outlinedButtonColors()
+                    }
+                ) {
+                    Text("📋 Paste & Compare")
+                }
             }
+
             Spacer(Modifier.height(12.dp))
 
-            if (mode == MODE_CHECKLIST) ChecklistMode(viewModel) else PasteCompareMode(viewModel)
+            if (mode == MODE_CHECKLIST) {
+                ChecklistMode(viewModel)
+            } else {
+                PasteCompareMode(viewModel)
+            }
         }
     }
 }
 
-/** No copy-paste needed: pick the event, tick items off as you find them (this records a real
- *  RETURN), whatever's left unticked is missing. */
+/**
+ * No copy-paste needed:
+ * Pick the event, tick items off as you find them.
+ * Anything left unticked is missing.
+ */
 @Composable
 private fun ChecklistMode(viewModel: AppViewModel) {
     val context = LocalContext.current
@@ -78,150 +104,341 @@ private fun ChecklistMode(viewModel: AppViewModel) {
     val assets by viewModel.assets.collectAsState()
     val activeEvent by viewModel.activeEvent.collectAsState()
 
-    var selectedEvent by remember(activeEvent) { mutableStateOf(activeEvent) }
+    var selectedEvent by remember(activeEvent) {
+        mutableStateOf(activeEvent)
+    }
 
     val outItems = remember(assets, selectedEvent) {
         val eventId = selectedEvent?.id
-        if (eventId == null) emptyList()
-        else assets.filter { it.currentEventId == eventId && it.status == ScanType.OUT }
-            .sortedBy { it.name }
+
+        if (eventId == null) {
+            emptyList()
+        } else {
+            assets
+                .filter {
+                    it.currentEventId == eventId &&
+                            it.status == ScanType.OUT
+                }
+                .sortedBy { it.name }
+        }
     }
 
     Text(
         "Select an event, then tick each item as you find it. Anything left unticked is still missing.",
         style = MaterialTheme.typography.bodyMedium
     )
+
     Spacer(Modifier.height(10.dp))
 
-    EventPicker(events = events, selected = selectedEvent, onSelect = { selectedEvent = it })
+    EventPicker(
+        events = events,
+        selected = selectedEvent,
+        onSelect = {
+            selectedEvent = it
+        }
+    )
 
     Spacer(Modifier.height(12.dp))
 
     if (selectedEvent == null) {
-        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {
-            Text("Pick an event to see its items.", modifier = Modifier.padding(14.dp))
+
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.errorContainer
+            )
+        ) {
+            Text(
+                "Pick an event to see its items.",
+                modifier = Modifier.padding(14.dp)
+            )
         }
+
     } else if (outItems.isEmpty()) {
-        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
-            Text("✅ Nothing still OUT for this event.", modifier = Modifier.padding(14.dp))
+
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer
+            )
+        ) {
+            Text(
+                "✅ Nothing still OUT for this event.",
+                modifier = Modifier.padding(14.dp)
+            )
         }
+
     } else {
-        Text("${outItems.size} item(s) still OUT:", style = MaterialTheme.typography.titleMedium)
-        LazyColumn(modifier = Modifier.fillMaxSize()) {
-            items(outItems, key = { it.assetId }) { asset ->
+
+        Text(
+            "${outItems.size} item(s) still OUT:",
+            style = MaterialTheme.typography.titleMedium
+        )
+
+        LazyColumn(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            items(
+                items = outItems,
+                key = { it.assetId }
+            ) { asset ->
+
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Checkbox(checked = false, onCheckedChange = { viewModel.markReturned(asset) })
+
+                    Checkbox(
+                        checked = false,
+                        onCheckedChange = {
+                            viewModel.markReturned(asset)
+                        }
+                    )
+
                     Column {
-                        Text("${asset.name}  (${asset.assetId})", style = MaterialTheme.typography.bodyLarge)
-                        Text(asset.category.ifBlank { "Asset" }, style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            "${asset.name}  (${asset.assetId})",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+
+                        Text(
+                            asset.category.ifBlank { "Asset" },
+                            style = MaterialTheme.typography.bodyMedium
+                        )
                     }
                 }
             }
         }
+
         Spacer(Modifier.height(8.dp))
+
         Button(
             onClick = {
                 val text = buildString {
                     append("*Missing Items — ${selectedEvent?.name}*\n\n")
-                    outItems.forEachIndexed { i, a -> append("${i + 1}. ${a.name} — ${a.assetId}\n") }
+
+                    outItems.forEachIndexed { i, asset ->
+                        append(
+                            "${i + 1}. ${asset.name} — ${asset.assetId}\n"
+                        )
+                    }
                 }
+
                 WhatsAppShare.shareText(context, text)
             },
             modifier = Modifier.fillMaxWidth()
-        ) { Text("📲 Share Missing List via WhatsApp") }
+        ) {
+            Text("📲 Share Missing List via WhatsApp")
+        }
     }
 }
 
-/** For cross-checking against text copied from WhatsApp (e.g. an older message, or one sent by
- *  someone not using this app) rather than the app's own live data. */
+/**
+ * Cross-check against text copied from WhatsApp.
+ */
 @Composable
 private fun PasteCompareMode(viewModel: AppViewModel) {
     val context = LocalContext.current
-    var outText by remember { mutableStateOf("") }
-    var returnText by remember { mutableStateOf("") }
-    var missing by remember { mutableStateOf<List<ReportParser.ParsedLine>?>(null) }
+
+    var outText by remember {
+        mutableStateOf("")
+    }
+
+    var returnText by remember {
+        mutableStateOf("")
+    }
+
+    var missing by remember {
+        mutableStateOf<List<ReportParser.ParsedLine>?>(null)
+    }
 
     Text(
-        "Paste an OUT report and a RETURN report copied from WhatsApp to find what's missing between them.",
+        "Paste an OUT report and a RETURN report copied from WhatsApp to find what's missing.",
         style = MaterialTheme.typography.bodyMedium
     )
+
     Spacer(Modifier.height(10.dp))
+
     OutlinedTextField(
         value = outText,
-        onValueChange = { outText = it },
-        label = { Text("Paste OUT Report") },
-        modifier = Modifier.fillMaxWidth().height(120.dp)
+        onValueChange = {
+            outText = it
+        },
+        label = {
+            Text("Paste OUT Report")
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(120.dp)
     )
+
     Spacer(Modifier.height(10.dp))
+
     OutlinedTextField(
         value = returnText,
-        onValueChange = { returnText = it },
-        label = { Text("Paste RETURN Report") },
-        modifier = Modifier.fillMaxWidth().height(120.dp)
+        onValueChange = {
+            returnText = it
+        },
+        label = {
+            Text("Paste RETURN Report")
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(120.dp)
     )
+
     Spacer(Modifier.height(12.dp))
+
     Button(
-        onClick = { missing = ReportParser.findMissing(outText, returnText) },
+        onClick = {
+            missing = ReportParser.findMissing(
+                outText,
+                returnText
+            )
+        },
         modifier = Modifier.fillMaxWidth()
-    ) { Text("Compare") }
+    ) {
+        Text("Compare")
+    }
 
     missing?.let { list ->
+
         Spacer(Modifier.height(12.dp))
+
         Card(
             colors = CardDefaults.cardColors(
-                containerColor = if (list.isEmpty()) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.errorContainer
+                containerColor =
+                    if (list.isEmpty()) {
+                        MaterialTheme.colorScheme.secondaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.errorContainer
+                    }
             )
         ) {
             Text(
-                if (list.isEmpty()) "✅ Everything came back!" else "⚠️ ${list.size} item(s) still missing:",
+                if (list.isEmpty()) {
+                    "✅ Everything came back!"
+                } else {
+                    "⚠️ ${list.size} item(s) still missing:"
+                },
                 modifier = Modifier.padding(12.dp),
                 style = MaterialTheme.typography.titleMedium
             )
         }
+
         Spacer(Modifier.height(8.dp))
-        LazyColumn(modifier = Modifier.fillMaxSize()) {
+
+        LazyColumn(
+            modifier = Modifier.fillMaxSize()
+        ) {
             items(list) { line ->
-                Text("• ${line.name.ifBlank { "(name?)" }} — ${line.assetId}", modifier = Modifier.padding(vertical = 4.dp))
+
+                Text(
+                    "• ${line.name.ifBlank { "(name?)" }} — ${line.assetId}",
+                    modifier = Modifier.padding(vertical = 4.dp)
+                )
             }
         }
+
         if (list.isNotEmpty()) {
+
             Spacer(Modifier.height(8.dp))
+
             Button(
                 onClick = {
+
                     val text = buildString {
                         append("*Missing Items*\n")
-                        list.forEachIndexed { i, l -> append("${i + 1}. ${l.name.ifBlank { "?" }} — ${l.assetId}\n") }
+
+                        list.forEachIndexed { i, line ->
+                            append(
+                                "${i + 1}. ${
+                                    line.name.ifBlank { "?" }
+                                } — ${line.assetId}\n"
+                            )
+                        }
                     }
-                    WhatsAppShare.shareText(context, text)
+
+                    WhatsAppShare.shareText(
+                        context,
+                        text
+                    )
                 },
                 modifier = Modifier.fillMaxWidth()
-            ) { Text("📲 Share Missing List via WhatsApp") }
+            ) {
+                Text("📲 Share Missing List via WhatsApp")
+            }
         }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun EventPicker(events: List<EventEntity>, selected: EventEntity?, onSelect: (EventEntity) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
+private fun EventPicker(
+    events: List<EventEntity>,
+    selected: EventEntity?,
+    onSelect: (EventEntity) -> Unit
+) {
+    var expanded by remember {
+        mutableStateOf(false)
+    }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = {
+            expanded = it
+        }
+    ) {
+
         OutlinedTextField(
             value = selected?.name ?: "",
             onValueChange = {},
             readOnly = true,
-            label = { Text("Event") },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            modifier = Modifier.menuAnchor().fillMaxWidth()
+            label = {
+                Text("Event")
+            },
+            trailingIcon = {
+                ExposedDropdownMenuDefaults.TrailingIcon(
+                    expanded = expanded
+                )
+            },
+            modifier = Modifier
+                .menuAnchor()
+                .fillMaxWidth()
         )
-        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            if (events.isEmpty()) {
-                DropdownMenuItem(text = { Text("No events yet") }, onClick = { expanded = false })
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = {
+                expanded = false
             }
-            events.forEach { event ->
-                DropdownMenuItem(text = { Text(event.name) }, onClick = { onSelect(event); expanded = false })
+        ) {
+
+            if (events.isEmpty()) {
+
+                DropdownMenuItem(
+                    text = {
+                        Text("No events yet")
+                    },
+                    onClick = {
+                        expanded = false
+                    }
+                )
+
+            } else {
+
+                events.forEach { event ->
+
+                    DropdownMenuItem(
+                        text = {
+                            Text(event.name)
+                        },
+                        onClick = {
+                            onSelect(event)
+                            expanded = false
+                        }
+                    )
+                }
             }
         }
     }
