@@ -26,8 +26,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExposedDropdownMenu
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
@@ -59,8 +59,12 @@ import com.manha.eventassettracker.viewmodel.ScanUiEvent
 import java.util.concurrent.Executors
 
 @Composable
-fun ScanScreen(viewModel: AppViewModel, onBack: () -> Unit) {
+fun ScanScreen(
+    viewModel: AppViewModel,
+    onBack: () -> Unit
+) {
     val context = LocalContext.current
+
     val activeEvent by viewModel.activeEvent.collectAsState()
     val events by viewModel.events.collectAsState()
     val scanMode by viewModel.scanMode.collectAsState()
@@ -68,153 +72,344 @@ fun ScanScreen(viewModel: AppViewModel, onBack: () -> Unit) {
 
     var hasCameraPermission by remember {
         mutableStateOf(
-            ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.CAMERA
+            ) == PackageManager.PERMISSION_GRANTED
         )
     }
-    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        hasCameraPermission = granted
-    }
 
-    val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        if (uri == null) return@rememberLauncherForActivityResult
-        try {
-            val image = InputImage.fromFilePath(context, uri)
-            val scanner = BarcodeScanning.getClient()
-            scanner.process(image)
-                .addOnSuccessListener { barcodes ->
-                    val value = barcodes.firstOrNull { !it.rawValue.isNullOrBlank() }?.rawValue
-                    if (value != null) {
-                        viewModel.onQrScanned(value)
-                    } else {
-                        android.widget.Toast.makeText(context, "No QR code found in this image.", android.widget.Toast.LENGTH_SHORT).show()
+    val permissionLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { granted ->
+            hasCameraPermission = granted
+        }
+
+    val galleryLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.GetContent()
+        ) { uri ->
+
+            if (uri == null) {
+                return@rememberLauncherForActivityResult
+            }
+
+            try {
+
+                val image = InputImage.fromFilePath(
+                    context,
+                    uri
+                )
+
+                val scanner = BarcodeScanning.getClient()
+
+                scanner.process(image)
+                    .addOnSuccessListener { barcodes ->
+
+                        val value =
+                            barcodes
+                                .firstOrNull {
+                                    !it.rawValue.isNullOrBlank()
+                                }
+                                ?.rawValue
+
+                        if (value != null) {
+
+                            viewModel.onQrScanned(value)
+
+                        } else {
+
+                            android.widget.Toast.makeText(
+                                context,
+                                "No QR code found in this image.",
+                                android.widget.Toast.LENGTH_SHORT
+                            ).show()
+                        }
                     }
-                }
-                .addOnFailureListener {
-                    android.widget.Toast.makeText(context, "Could not read this image.", android.widget.Toast.LENGTH_SHORT).show()
-                }
-        } catch (e: Exception) {
-            android.widget.Toast.makeText(context, "Could not read this image.", android.widget.Toast.LENGTH_SHORT).show()
+                    .addOnFailureListener {
+
+                        android.widget.Toast.makeText(
+                            context,
+                            "Could not read this image.",
+                            android.widget.Toast.LENGTH_SHORT
+                        ).show()
+                    }
+
+            } catch (e: Exception) {
+
+                android.widget.Toast.makeText(
+                    context,
+                    "Could not read this image.",
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+
+    LaunchedEffect(Unit) {
+
+        if (!hasCameraPermission) {
+            permissionLauncher.launch(
+                Manifest.permission.CAMERA
+            )
         }
     }
 
-    LaunchedEffect(Unit) {
-        if (!hasCameraPermission) permissionLauncher.launch(Manifest.permission.CAMERA)
-    }
-
     LaunchedEffect(scanEvent) {
+
         if (scanEvent != null) {
+
             kotlinx.coroutines.delay(1600)
+
             viewModel.consumeScanEvent()
         }
     }
 
-    ScreenScaffold(title = "Scan OUT / RETURN", onBack = onBack) { padding ->
+    ScreenScaffold(
+        title = "Scan OUT / RETURN",
+        onBack = onBack
+    ) { padding ->
+
         Column(
             modifier = padding
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
+
             EditableEventField(
                 events = events,
                 activeEvent = activeEvent,
-                onSelectExisting = { viewModel.setActiveEvent(it) },
+                onSelectExisting = {
+                    viewModel.setActiveEvent(it)
+                },
                 onCreateNew = { name ->
-                    viewModel.addEvent(name, date = "", venue = "", note = "") { created ->
-                        viewModel.setActiveEvent(created)
+
+                    viewModel.addEvent(
+                        name,
+                        date = "",
+                        venue = "",
+                        note = ""
+                    ) { created ->
+
+                        viewModel.setActiveEvent(
+                            created
+                        )
                     }
                 }
             )
 
-            Spacer(Modifier.height(12.dp))
+            Spacer(
+                Modifier.height(12.dp)
+            )
 
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+
                 Button(
-                    onClick = { viewModel.setScanMode(ScanType.OUT) },
+                    onClick = {
+                        viewModel.setScanMode(
+                            ScanType.OUT
+                        )
+                    },
                     modifier = Modifier.weight(1f),
-                    colors = if (scanMode == ScanType.OUT) ButtonDefaults.buttonColors() else ButtonDefaults.outlinedButtonColors()
-                ) { Text("OUT") }
+                    colors =
+                        if (scanMode == ScanType.OUT) {
+                            ButtonDefaults.buttonColors()
+                        } else {
+                            ButtonDefaults.outlinedButtonColors()
+                        }
+                ) {
+                    Text("OUT")
+                }
+
                 Button(
-                    onClick = { viewModel.setScanMode(ScanType.RETURN) },
+                    onClick = {
+                        viewModel.setScanMode(
+                            ScanType.RETURN
+                        )
+                    },
                     modifier = Modifier.weight(1f),
-                    colors = if (scanMode == ScanType.RETURN)
-                        ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
-                    else ButtonDefaults.outlinedButtonColors()
-                ) { Text("RETURN") }
+                    colors =
+                        if (scanMode == ScanType.RETURN) {
+                            ButtonDefaults.buttonColors(
+                                containerColor =
+                                    MaterialTheme.colorScheme.secondary
+                            )
+                        } else {
+                            ButtonDefaults.outlinedButtonColors()
+                        }
+                ) {
+                    Text("RETURN")
+                }
             }
 
-            Spacer(Modifier.height(12.dp))
+            Spacer(
+                Modifier.height(12.dp)
+            )
 
             when {
+
                 activeEvent == null -> {
-                    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {
+
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor =
+                                MaterialTheme.colorScheme.errorContainer
+                        )
+                    ) {
+
                         Text(
                             "Scan shuru karne se pehle upar se ek Event select karein.",
                             modifier = Modifier.padding(14.dp)
                         )
                     }
                 }
+
                 else -> {
+
                     if (!hasCameraPermission) {
+
                         Card {
-                            Column(Modifier.padding(14.dp)) {
-                                Text("Camera permission chahiye scan karne ke liye.")
-                                Spacer(Modifier.height(8.dp))
-                                Button(onClick = { permissionLauncher.launch(Manifest.permission.CAMERA) }) {
-                                    Text("Camera Allow Karein")
+
+                            Column(
+                                Modifier.padding(14.dp)
+                            ) {
+
+                                Text(
+                                    "Camera permission chahiye scan karne ke liye."
+                                )
+
+                                Spacer(
+                                    Modifier.height(8.dp)
+                                )
+
+                                Button(
+                                    onClick = {
+                                        permissionLauncher.launch(
+                                            Manifest.permission.CAMERA
+                                        )
+                                    }
+                                ) {
+                                    Text(
+                                        "Camera Allow Karein"
+                                    )
                                 }
                             }
                         }
+
                     } else {
+
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .aspectRatio(1f)
-                                .background(Color.Black, RoundedCornerShape(12.dp))
+                                .background(
+                                    Color.Black,
+                                    RoundedCornerShape(12.dp)
+                                )
                         ) {
-                            CameraPreviewWithAnalyzer(onBarcodeDetected = { value -> viewModel.onQrScanned(value) })
+
+                            CameraPreviewWithAnalyzer(
+                                onBarcodeDetected = { value ->
+                                    viewModel.onQrScanned(
+                                        value
+                                    )
+                                }
+                            )
                         }
                     }
-                    Spacer(Modifier.height(10.dp))
+
+                    Spacer(
+                        Modifier.height(10.dp)
+                    )
+
                     Button(
-                        onClick = { galleryLauncher.launch("image/*") },
+                        onClick = {
+                            galleryLauncher.launch(
+                                "image/*"
+                            )
+                        },
                         modifier = Modifier.fillMaxWidth()
-                    ) { Text("🖼️  Scan QR from Gallery") }
+                    ) {
+                        Text(
+                            "🖼️  Scan QR from Gallery"
+                        )
+                    }
                 }
             }
 
-            Spacer(Modifier.height(12.dp))
+            Spacer(
+                Modifier.height(12.dp)
+            )
 
             when (val event = scanEvent) {
+
                 is ScanUiEvent.Scanned -> {
-                    val label = if (event.type == ScanType.OUT) "OUT ✅" else "RETURN ✅"
+
+                    val label =
+                        if (event.type == ScanType.OUT) {
+                            "OUT ✅"
+                        } else {
+                            "RETURN ✅"
+                        }
+
                     ResultBanner(
-                        text = "$label — ${event.name} (${event.assetId})",
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer
+                        text =
+                            "$label — ${event.name} (${event.assetId})",
+                        containerColor =
+                            MaterialTheme.colorScheme.secondaryContainer
                     )
                 }
+
                 is ScanUiEvent.AlreadyDone -> {
+
                     ResultBanner(
-                        text = "${event.name} (${event.assetId}) already ${event.currentStatus} hai.",
-                        containerColor = MaterialTheme.colorScheme.errorContainer
+                        text =
+                            "${event.name} (${event.assetId}) already ${event.currentStatus} hai.",
+                        containerColor =
+                            MaterialTheme.colorScheme.errorContainer
                     )
                 }
+
                 is ScanUiEvent.Error -> {
-                    ResultBanner(text = event.message, containerColor = MaterialTheme.colorScheme.errorContainer)
+
+                    ResultBanner(
+                        text = event.message,
+                        containerColor =
+                            MaterialTheme.colorScheme.errorContainer
+                    )
                 }
-                null -> {}
+
+                null -> {
+                }
             }
         }
     }
 }
 
 @Composable
-private fun ResultBanner(text: String, containerColor: Color) {
-    Card(colors = CardDefaults.cardColors(containerColor = containerColor), modifier = Modifier.fillMaxWidth()) {
-        Text(text, modifier = Modifier.padding(14.dp), style = MaterialTheme.typography.titleMedium)
+private fun ResultBanner(
+    text: String,
+    containerColor: Color
+) {
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = containerColor
+        ),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+
+        Text(
+            text,
+            modifier = Modifier.padding(14.dp),
+            style = MaterialTheme.typography.titleMedium
+        )
     }
 }
 
-@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@androidx.compose.material3.ExperimentalMaterial3Api
 @Composable
 private fun EditableEventField(
     events: List<EventEntity>,
@@ -222,105 +417,283 @@ private fun EditableEventField(
     onSelectExisting: (EventEntity) -> Unit,
     onCreateNew: (String) -> Unit
 ) {
-    var text by remember(activeEvent?.id) { mutableStateOf(activeEvent?.name ?: "") }
-    var expanded by remember { mutableStateOf(false) }
-    val suggestions = remember(text, events) {
-        if (text.isBlank()) events else events.filter { it.name.contains(text, ignoreCase = true) }
+    var text by remember(activeEvent?.id) {
+        mutableStateOf(
+            activeEvent?.name ?: ""
+        )
     }
-    val matchesExisting = events.any { it.name.equals(text.trim(), ignoreCase = true) }
 
-    Column {
-        ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
-            OutlinedTextField(
-                value = text,
-                onValueChange = { text = it; expanded = true },
-                label = { Text("Event Name (pick existing or type a new one)") },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                modifier = Modifier
-                    .menuAnchor()
-                    .fillMaxWidth()
-            )
-            ExposedDropdownMenu(expanded = expanded && suggestions.isNotEmpty(), onDismissRequest = { expanded = false }) {
-                suggestions.forEach { event ->
-                    DropdownMenuItem(
-                        text = { Text(event.name) },
-                        onClick = { text = event.name; expanded = false; onSelectExisting(event) }
+    var expanded by remember {
+        mutableStateOf(false)
+    }
+
+    val suggestions =
+        remember(text, events) {
+
+            if (text.isBlank()) {
+                events
+            } else {
+                events.filter {
+                    it.name.contains(
+                        text,
+                        ignoreCase = true
                     )
                 }
             }
         }
-        Spacer(Modifier.height(8.dp))
+
+    val matchesExisting =
+        events.any {
+            it.name.equals(
+                text.trim(),
+                ignoreCase = true
+            )
+        }
+
+    Column {
+
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = {
+                expanded = it
+            }
+        ) {
+
+            OutlinedTextField(
+                value = text,
+                onValueChange = {
+                    text = it
+                    expanded = true
+                },
+                label = {
+                    Text(
+                        "Event Name (pick existing or type a new one)"
+                    )
+                },
+                trailingIcon = {
+                    ExposedDropdownMenuDefaults.TrailingIcon(
+                        expanded = expanded
+                    )
+                },
+                modifier = Modifier
+                    .menuAnchor()
+                    .fillMaxWidth()
+            )
+
+            DropdownMenu(
+                expanded =
+                    expanded &&
+                            suggestions.isNotEmpty(),
+                onDismissRequest = {
+                    expanded = false
+                }
+            ) {
+
+                suggestions.forEach { event ->
+
+                    DropdownMenuItem(
+                        text = {
+                            Text(event.name)
+                        },
+                        onClick = {
+
+                            text = event.name
+
+                            expanded = false
+
+                            onSelectExisting(
+                                event
+                            )
+                        }
+                    )
+                }
+            }
+        }
+
+        Spacer(
+            Modifier.height(8.dp)
+        )
+
         Button(
             onClick = {
-                val trimmed = text.trim()
-                if (trimmed.isEmpty()) return@Button
-                val existing = events.find { it.name.equals(trimmed, ignoreCase = true) }
-                if (existing != null) onSelectExisting(existing) else onCreateNew(trimmed)
+
+                val trimmed =
+                    text.trim()
+
+                if (trimmed.isEmpty()) {
+                    return@Button
+                }
+
+                val existing =
+                    events.find {
+                        it.name.equals(
+                            trimmed,
+                            ignoreCase = true
+                        )
+                    }
+
+                if (existing != null) {
+
+                    onSelectExisting(
+                        existing
+                    )
+
+                } else {
+
+                    onCreateNew(
+                        trimmed
+                    )
+                }
+
                 expanded = false
             },
             modifier = Modifier.fillMaxWidth()
-        ) { Text(if (matchesExisting) "Use This Event" else "Create & Use New Event") }
+        ) {
+
+            Text(
+                if (matchesExisting) {
+                    "Use This Event"
+                } else {
+                    "Create & Use New Event"
+                }
+            )
+        }
     }
 }
 
 @Composable
-private fun CameraPreviewWithAnalyzer(onBarcodeDetected: (String) -> Unit) {
-    val lifecycleOwner = LocalLifecycleOwner.current
-    val scanner = remember { BarcodeScanning.getClient() }
-    val analysisExecutor = remember { Executors.newSingleThreadExecutor() }
+private fun CameraPreviewWithAnalyzer(
+    onBarcodeDetected: (String) -> Unit
+) {
+    val lifecycleOwner =
+        LocalLifecycleOwner.current
+
+    val scanner =
+        remember {
+            BarcodeScanning.getClient()
+        }
+
+    val analysisExecutor =
+        remember {
+            Executors.newSingleThreadExecutor()
+        }
 
     DisposableEffect(Unit) {
+
         onDispose {
+
             analysisExecutor.shutdown()
+
             scanner.close()
         }
     }
 
     AndroidView(
         modifier = Modifier.fillMaxSize(),
+
         factory = { ctx ->
-            val previewView = PreviewView(ctx)
-            val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
+
+            val previewView =
+                PreviewView(ctx)
+
+            val cameraProviderFuture =
+                ProcessCameraProvider.getInstance(
+                    ctx
+                )
+
             cameraProviderFuture.addListener({
-                val cameraProvider = cameraProviderFuture.get()
 
-                val preview = Preview.Builder().build().also {
-                    it.setSurfaceProvider(previewView.surfaceProvider)
-                }
+                val cameraProvider =
+                    cameraProviderFuture.get()
 
-                val analysis = ImageAnalysis.Builder()
-                    .setTargetResolution(Size(1280, 1280))
-                    .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                    .build()
+                val preview =
+                    Preview.Builder()
+                        .build()
+                        .also {
+                            it.setSurfaceProvider(
+                                previewView.surfaceProvider
+                            )
+                        }
 
-                analysis.setAnalyzer(analysisExecutor) { imageProxy ->
-                    val mediaImage = imageProxy.image
+                val analysis =
+                    ImageAnalysis.Builder()
+                        .setTargetResolution(
+                            Size(
+                                1280,
+                                1280
+                            )
+                        )
+                        .setBackpressureStrategy(
+                            ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST
+                        )
+                        .build()
+
+                analysis.setAnalyzer(
+                    analysisExecutor
+                ) { imageProxy ->
+
+                    val mediaImage =
+                        imageProxy.image
+
                     if (mediaImage != null) {
-                        val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
+
+                        val image =
+                            InputImage.fromMediaImage(
+                                mediaImage,
+                                imageProxy
+                                    .imageInfo
+                                    .rotationDegrees
+                            )
+
                         scanner.process(image)
-                            .addOnSuccessListener { barcodes: List<Barcode> ->
-                                val value = barcodes.firstOrNull { !it.rawValue.isNullOrBlank() }?.rawValue
-                                if (value != null) onBarcodeDetected(value)
+                            .addOnSuccessListener {
+                                    barcodes: List<Barcode> ->
+
+                                val value =
+                                    barcodes
+                                        .firstOrNull {
+                                            !it.rawValue
+                                                .isNullOrBlank()
+                                        }
+                                        ?.rawValue
+
+                                if (value != null) {
+
+                                    onBarcodeDetected(
+                                        value
+                                    )
+                                }
                             }
-                            .addOnCompleteListener { imageProxy.close() }
+                            .addOnCompleteListener {
+
+                                imageProxy.close()
+                            }
+
                     } else {
+
                         imageProxy.close()
                     }
                 }
 
                 try {
+
                     cameraProvider.unbindAll()
+
                     cameraProvider.bindToLifecycle(
                         lifecycleOwner,
                         CameraSelector.DEFAULT_BACK_CAMERA,
                         preview,
                         analysis
                     )
+
                 } catch (e: Exception) {
-                    // Camera bind failed (e.g. no camera hardware) — preview simply stays blank;
-                    // manual entry elsewhere in the app still works.
+
+                    // Camera bind failed.
+                    // Manual entry can still be used.
                 }
+
             }, ContextCompat.getMainExecutor(ctx))
+
             previewView
         }
     )
