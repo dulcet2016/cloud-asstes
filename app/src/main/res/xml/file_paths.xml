@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Used only on Android 9 (API 28) and below, where PDFs are written directly to the
+         public Downloads folder. On Android 10+ we save via MediaStore instead, which already
+         hands back a shareable content:// Uri, so this path is not used there. -->
+    <external-path name="downloads" path="Download/" />
+    <cache-path name="cache" path="." />
+</paths>
